@@ -1,0 +1,28 @@
+Short analysis of changes for GroupSupport
+--------------------------------------------------------
+2011/10/24; mdobrinic
+
+Group Support is realized in the same way that CSV and LDAP support is implemented, by importing users in the token-tables, that are used for entering a Survey.
+Currently, LDAP and CSV are supported means to import users into the token generating process.
+Token generation flow is implemented from admin/tokens.php
+- Implementation in a Two-Step process:
+  1. Show selection form
+  2. Process import according to input data from selection form
+
+Requires changing admin/tokens.php and duplicate the functionality in (sub)action-handlers 'import' and 'upload' for conext-groups:
+- Action==tokens, subactions “importos”, “uploados”:
+  1. subaction==importos: Selection form, shows all Groups the user is member of
+  2. subaction==uploados: Request members of selected Group(s), create token records
+
+
+* Changes described
+Re-use the GroupRel-library
+Copy 'GroupRel'-directory to $limesurvey/admin/classes
+Create new GroupTokens.php file in /admin that interfaces LimeSurvey to GroupRel, and include it from where needed :
+- tokens.php:$subaction=='importos'
+- tokens.php:$subaction=='uploados'
+- osgroup.php
+
+admin.php : create new action “osgroup”, that includes “osgroup.php” as handler:
+osgroup.php:
+- subaction=form : render the form for the currently logged in user; action is called asynchronously by the group selector; uses GroupRel-library to render the form according to a template (php)

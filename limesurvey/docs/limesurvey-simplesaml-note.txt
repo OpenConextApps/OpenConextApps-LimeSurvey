@@ -1,0 +1,32 @@
+Short analysis of logging in using SURFfederatie
+--------------------------------------------------------
+2011/10/24; mdobrinic
+
+Integration of SimpleSAMLphp in LimeSurvey is more or less the same as integrating SimpleSAMLphp in any other webapplication, with one difference: LimeSurvey is making extensive use of the PHP session facility.
+When entering a protected resource of LimeSurvey (for example, $limesurvey_url/admin/admin.php), the LimeSurvey application will create a session in the $limesurvey_url path with a custom name, and tries to establish the identity of the user in this session. When directing control to SimpleSAMLphp, the SimpleSAMLphp application will also try to create a session, with a configurable name and configurable path.
+This flow causes the following problems: it is not possible to start two sessions (with different session-names) in one request. This means that the sessions for LimeSurvey and SimpleSAMLphp need to be aligned. The session mechanism is implemented using cookies, with the cookie-name set to the session-name and the cookie-value set to the session-identifier. The cookie is set for a relative path. Aligning the two sessions means:
+1. Ensure the cookie is made available to SimpleSAML and LimeSurvey: align cookie-domain
+2. Ensure the cookie can be retrieved by both SimpleSAML and LimeSurvey: align cookie-name
+
+* Aligning the cookie-domain
+By default, LimeSurvey calculates the path under which it was made available, and sets its session-cookies in this path. This is correct behaviour, and leads to a cookie set for the path “/limesurvey”.
+SimpleSAML is called both by an include from a resource in path “/limesurvey”, as well as with its return URLs in its own alias-ed URL, (by default) in path “/simplesaml”.
+When the /limesurvey-session is created, SimpleSAMLphp makes use of this session.
+When the user is returned to /simplesaml, the original session is not resumed, because it was created in another cookie-path.
+The solution is to deploy SimpleSAMLphp under the LimeSurvey context /limesurvey/simplesaml
+This is realized by
+- changing the Alias in /etc/apache2/sites-available/limesurvey.conext.surfnetlabs.nl
+- changing the baseurlpath in $simplesaml/config/config.php :
+'baseurlpath'           => 'limesurvey/simplesaml/',
+
+* Aligning the cookie-name
+The PHP session facility uses the session-name to establish the name for the session-cookie. When LimeSurvey is installed, a session-name that is unique for the deployment, is generated and stored as a global application setting.
+SimpleSAMLphp on the other hand makes use of the default session name ('PHPSESSID') or can use a configured, fixed, session-name.
+To make sure that SimpleSAMLphp uses the same session that was initially created by LimeSurvey, the names must be aligned. This is best done by adjusting SimpleSAMLphp to LimeSurvey, so no code has to be changed:
+- Figure out the cookie-name that is set by LimeSurvey
+  1. Either use GlobalSettings: SELECT stg_value FROM lime_settings_global WHERE stg_name='SessionName'
+  2. Or visit /limesurvey/admin and find out the name of the cookie that is tried to be set
+- Update $simplesaml/config/config.php, change the setting session.phpsession.cookiename to the cookie-name that is set by LimeSurvey.
+
+
+Problems solved.

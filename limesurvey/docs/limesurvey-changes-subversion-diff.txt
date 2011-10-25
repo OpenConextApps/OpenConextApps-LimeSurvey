@@ -1,0 +1,244 @@
+Index: config-saml.php
+===================================================================
+--- config-saml.php	(revision 8)
++++ config-saml.php	(working copy)
+@@ -26,6 +26,12 @@
+ // The user still needs to be defined in the limesurvey database in order to
+ // login and get his permissions (unless $WebserverAuth_autocreateUser is set to true)
+ $useWebserverAuth = true;
++    
++    
++// Configure authmethod to be SAML
++$samlEnabled = true;
++    
++    
+ //
+ // $userArrayMap
+ // Enable username mapping
+@@ -33,7 +39,7 @@
+ // defined in LimeSurvey
+ // Can be usefull if you have no way to add an 'admin' user to the database
+ // used by the webserver, then you could map your true loginame to admin with
+-$userArrayMap = Array ('SURFNET.niels' => 'admin');
++$userArrayMap = Array ('urn:collab:person:test.surfguest.nl:mdobrinic' => 'admin');
+ //
+ // $WebserverAuth_autocreateUser
+ // Enable this if you want to automatically create users authenticated by the 
+@@ -95,24 +101,30 @@
+ // Handle SAML authentication stuff using simplesamlphp
+ 
+ // Include simpleSAMLcodebase
+-require_once('/var/simplesamlphp/lib/_autoload.php');
++// define('SIMPLESAML_PATH', '/var/www/simplesaml');
++define('SIMPLESAML_PATH', '/Users/dopey/Projects/SURFnet/LimeSurvey/Workspace/simplesaml');
++require_once(SIMPLESAML_PATH . '/lib/_autoload.php');
+ 
+-// Use the default sp setting as defined in simplesamlphp
+-$as = new SimpleSAML_Auth_Simple('default-sp');
++$samlEnabled = false;    
+ 
+-// force authentication against remote IdP
+-$as->requireAuth();
++if ($samlEnabled) {
++    // Use the default sp setting as defined in simplesamlphp
++    $as = new SimpleSAML_Auth_Simple('default-sp');
+ 
+-// Get attributes provided by the IdP
+-$attributes = $as->getAttributes();
++    // force authentication against remote IdP
++    $as->requireAuth();
+ 
+-// Get a unique ID for the user.
+-// If you are using standard eduPerson attributes, you may want to use ['urn:mace:dir:attribute-def:eduPersonPrincipalName']
+-$user_id = $attributes['NameID'][0];
++    // Get attributes provided by the IdP
++    $attributes = $as->getAttributes();
+ 
+-// Set the $user_id in the server scope; this allows limesurvey to detect the user is already authenticated
+-$_SERVER['REMOTE_USER'] = $user_id;
++    // Get a unique ID for the user.
++    // If you are using standard eduPerson attributes, you may want to use ['urn:mace:dir:attribute-def:eduPersonPrincipalName']
++    $user_id = $attributes['NameID'][0];
+ 
++    // Set the $user_id in the server scope; this allows limesurvey to detect the user is already authenticated
++    $_SERVER['REMOTE_USER'] = $user_id;
++}
++
+ // Use the hook_get_autouserprofile funciton to provision users on the fly
+ // 
+ function hook_get_autouserprofile($user_id)
+@@ -134,7 +146,7 @@
+   $attributes = $as->getAttributes();
+   
+   // Use 'urn:mace:dir:attribute-def:displayName' if this is not available, use ['urn:mace:dir:attribute-def:eduPersonPrincipalName']
+-  if (strlen($attributes['urn:mace:dir:attribute-def:displayName'][0]) == 0) {
++  if (strlen($attributes['urn:mace:dir:attribute-def:displayName'][0]) != 0) {
+   	$user_name = $attributes['urn:mace:dir:attribute-def:displayName'][0];
+   } else {
+   	$user_name = $attributes['urn:mace:dir:attribute-def:eduPersonPrincipalName'][0];
+@@ -144,7 +156,7 @@
+   $user_email = $attributes['urn:mace:dir:attribute-def:mail'][0];
+   
+   // Use instellingafkorting (SURFfederatie) to provide an organisation
+-  $org = $attributes['urn:surfnet:idd:instellingafkorting'][0];
++  $org = $attributes['urn:mace:terena.org:attribute-def:schacHomeOrganization'][0];
+ 
+   $userAttributes =  Array(
+ 			'full_name' => $user_name . " (".$org.")",
+Index: config-defaults.php
+===================================================================
+--- config-defaults.php	(revision 8)
++++ config-defaults.php	(working copy)
+@@ -595,3 +595,6 @@
+ {
+     // commandline installation, no relativeurl needed
+ }
++
++require_once('config-saml.php');
++require_once('config-opensocial.php');
+Index: admin/admin.php
+===================================================================
+--- admin/admin.php	(revision 8)
++++ admin/admin.php	(working copy)
+@@ -59,8 +59,12 @@
+ {
+     include_once("login_check_cas.php");
+ }
+-else
++elseif ($samlEnabled==true) 
+ {
++    include_once('login_check_saml.php');
++} 
++else 
++{
+     include_once('login_check.php');
+ }
+ 
+@@ -519,7 +523,12 @@
+     {
+         if(bHasSurveyPermission($surveyid,'responses','create'))    {include('vvimport.php');}
+         else { include('access_denied.php');}
+-    }
++    } 
++    elseif ($action == 'osgroup') 
++    {
++		include('osgroup.php');
++	}
++
+     if ($action=='addquestion'    || $action=='copyquestion' || $action=='editquestion' || $action=='editdefaultvalues' ||
+         $action=='orderquestions' || $action=='ajaxquestionattributes' || $action=='ajaxlabelsetpicker' || $action=='ajaxlabelsetdetails')
+     {
+Index: admin/tokens.php
+===================================================================
+--- admin/tokens.php	(revision 8)
++++ admin/tokens.php	(working copy)
+@@ -616,7 +616,11 @@
+         ."title='".$clang->gTview("Import tokens from CSV file")."'> "
+         ."<img name='ImportButton' src='$imageurl/importcsv.png' title='' alt='".$clang->gT("Import tokens from CSV file")."' /></a>"
+         ."<a href=\"#\" onclick=\"window.open('$scriptname?action=tokens&amp;sid=$surveyid&amp;subaction=importldap', '_top')\" "
+-        ."title='".$clang->gTview("Import tokens from LDAP query")."'> <img name='ImportLdapButton' src='$imageurl/importldap.png' alt='".$clang->gT("Import tokens from LDAP query")."' /></a>";
++        ."title='".$clang->gTview("Import tokens from LDAP query")."'> "
++        ."<img name='ImportLdapButton' src='$imageurl/importldap.png' alt='".$clang->gT("Import tokens from LDAP query")."' /></a>"
++        ."<a href=\"#\" onclick=\"window.open('$scriptname?action=tokens&amp;sid=$surveyid&amp;subaction=importos', '_top')\" "
++        ."title='".$clang->gTview("Import tokens from SURFconext/OpenSocial")."'> "
++        ."<img name='ImportOSButton' src='$imageurl/SURFconext_klein.gif' height=40 width=60 alt='".$clang->gT("Import tokens from SURFconext/OpenSocial")."' /></a>";
+     }
+ 
+     if (bHasSurveyPermission($surveyid, 'tokens','export'))
+@@ -2678,6 +2682,36 @@
+     ."</div>\n";
+ }
+ 
++// ----------
++// SURFconext
++// Support for selecting OpenSocial group relations to distribute tokens for
++if ($subaction == 'importos' && bHasSurveyPermission($surveyid, 'tokens','import'))
++{
++    global $grouprel_config, $as, $user_id;
++	// global $samlEnabled; assert($samlEnabled);
++
++	if (isset($as)) {
++		$auth = array($grouprel_config['userIdAttribute'] => $user_id);
++	} else {
++		// developer:
++	    $auth = array($grouprel_config['userIdAttribute'] => 'urn:collab:person:test.surfguest.nl:mdobrinic');
++	}
++
++    require_once('classes/GroupTokens.php');
++    
++    $o = new GroupTokens($auth, $surveyid, $grouprel_config);
++
++    $url = "$rooturl/admin/admin.php?action=osgroup&sid=$surveyid&subaction=form";
++	$s = $o->show($url,true);
++    
++    $tokenoutput .= "\t<div class='header ui-widget-header'>".$clang->gT("Select OpenSocial groups")."</div>\n";
++    $tokenoutput .= "\t<div class='messagebox ui-corner-all'>\n";
++    $tokenoutput .= $s;
++    $tokenoutput .= "\t</div>\n";
++}
++// ----------
++
++
+ if ($subaction == "upload" && bHasSurveyPermission($surveyid, 'tokens','import'))
+ {
+     $attrfieldnames=GetAttributeFieldnames($surveyid);
+@@ -3147,6 +3181,59 @@
+     }
+ }
+ 
++// OpenSocial / Conext: process selected groups
++if ($subaction == "uploados" && bHasSurveyPermission($surveyid, 'tokens','import'))
++{
++	global $surveyid, $tokenoutput;
++    require_once('classes/GroupTokens.php');
++
++    global $grouprel_config;
++    $auth = array($grouprel_config['userIdAttribute'] => 'urn:collab:person:test.surfguest.nl:mdobrinic');
++    
++    $o = new GroupTokens($auth, $surveyid, $grouprel_config);
++	
++	$invite_output .= $o->invite();
++	$persons = $o->_allmembers;
++	$personcount = count($persons);
++	if ($personcount > 0) {
++		$language = GetBaseLanguageFromSurveyID($surveyid);
++		foreach($persons as $p) {
++			$iq = "INSERT INTO ".db_table_name("tokens_$surveyid")." \n"
++						. "(firstname, lastname, email, emailstatus, language) \n"
++						. "VALUES (%1, %2, %3, 'OK', " . db_quoteall($language) .")";
++	
++			$a = $p->getAttributes();
++			
++			$iq = str_replace('%1', db_quoteall($a['firstname']), $iq);
++			$iq = str_replace('%2', db_quoteall($a['lastname']), $iq);
++			$iq = str_replace('%3', db_quoteall($a['email']), $iq);
++	
++			if (true) {
++			  $ir = $connect->Execute($iq);
++			} else {
++			  echo "Executing: '$iq' <br/>\n";
++			}
++		}	// foreach(persons)
++		
++		$tokenoutput .= "<span class='successtitle'>".$clang->gT("Success")."</span><br /><br />\n";
++		
++	} else {
++	   	$tokenoutput .= "<font color='red'>".$clang->gT("Failed")."</font><br /><br />\n";
++	   	$tokenoutput .= $clang->gT("There were no group(s) selected or group-member(s) retrieved.");
++	}	// if (count>0)
++	
++    $message .= "$personcount ".$clang->gT("persons have been added to the survey").".<br />\n";
++
++    $tokenoutput .= "\t<div class='messagebox ui-corner-all'>\n";
++	$tokenoutput .= $message;
++	$tokenoutput .= $invite_output;
++	$tokenoutput .= $clang->gT("The next step is to generate tokens for all invited users, and distribute the tokens. Follow the 'Generate Tokens' link to perform the next step.");
++    $tokenoutput .= "\t</div>\n";
++
++}
++
++
++
+ // Now for the function
+ function form_csv_upload($error=false)
+ {
