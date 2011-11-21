@@ -3191,7 +3191,7 @@ if ($subaction == "uploados" && bHasSurveyPermission($surveyid, 'tokens','import
     
     $o = new GroupTokens($auth, $surveyid, $grouprel_config);
 	
-	$invite_output .= $o->invite();
+	$invite_output = $o->invite();
 	$persons = $o->_allmembers;
 	$personcount = count($persons);
 	if ($personcount > 0) {
@@ -3221,7 +3221,7 @@ if ($subaction == "uploados" && bHasSurveyPermission($surveyid, 'tokens','import
 	   	$tokenoutput .= $clang->gT("There were no group(s) selected or group-member(s) retrieved.");
 	}	// if (count>0)
 	
-    $message .= "$personcount ".$clang->gT("persons have been added to the survey").".<br />\n";
+    $message = "$personcount ".$clang->gT("persons have been added to the survey").".<br />\n";
 
     $tokenoutput .= "\t<div class='messagebox ui-corner-all'>\n";
 	$tokenoutput .= $message;
