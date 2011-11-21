@@ -7,7 +7,7 @@ The following installation instructions are the guideline of the LimeSurvey inst
 LimeSurvey will be installed in /var/www/limesurvey.conext.surfnetlabs.nl
 
 * Installing pre-requisites
-$ sudo apt-get install php5-gd php5-imap sqlite php5-sqlite
+$ sudo apt-get install php5-gd php5-imap sqlite php5-sqlite php5-curl
 
 * Configuration of SSL host
 - create ssl site definition in /etc/apache2/sites-available/limesurvey.conext.surfnetlabs.nl
