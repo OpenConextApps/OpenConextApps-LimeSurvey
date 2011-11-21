@@ -44,7 +44,8 @@ class GroupRelationsImpl extends IGroupRelations {
 
 		$this->_strictMode = ($config["strictMode"] == TRUE);
 		
-		$this->_msgSource = $config["msgSource"];
+		
+		$this->_msgSource = (array_key_exists('msgSource',$config)?$config["msgSource"]:null);
 		
 		$provider_config = $config["provider"];
 		$cln = $provider_config["class"];
@@ -123,8 +124,8 @@ class GroupRelationsImpl extends IGroupRelations {
 
   		$osapi = new osapi($this->_osapiProvider, $auth);
         
-		if ($strictMode) {
-			$osapi->setStrictMode($strictMode);
+		if ($this->_strictMode) {
+			$osapi->setStrictMode($this->_strictMode);
 		}
         
 		// Start a batch so that many requests may be made at once.
