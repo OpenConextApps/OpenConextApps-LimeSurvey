@@ -251,7 +251,7 @@ SHOW
             
 			self::$fetcher->process(array('userId' => $userId, 'message' => new Message()), 
 				array($this, "appendMember"),			
-				$aSelectedGroups, $aSelectedPersons);
+				$aSelectedGroups, null);
             
             
             // $this->_allmembers now contains all the members
