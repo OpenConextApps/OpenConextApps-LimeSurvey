@@ -30,6 +30,48 @@ if (isset($_POST['uid'])) {$postuserid=sanitize_int($_POST['uid']);}
 if (isset($_POST['full_name'])) {$postfull_name=sanitize_userfullname($_POST['full_name']);}
 
 
+    
+    // moved this code from the end of the file to the start of the file
+    // very ugly fix around very ugly implementation and include-control of LimeSurvey:
+    if (!function_exists('getInitialAdmin_uid')) {
+        function getInitialAdmin_uid()
+        {
+            global $dbprefix;
+            // Initial SuperAdmin has parent_id == 0
+            $adminquery = "SELECT uid FROM {$dbprefix}users WHERE parent_id=0";
+            $adminresult = db_select_limit_assoc($adminquery, 1);
+            $row=$adminresult->FetchRow();
+            return $row['uid'];
+        }
+        
+        function fGetLoginAttemptUpdateQry($la,$sIp)
+        {
+            $timestamp = date("Y-m-d H:i:s");
+            if ($la)
+                $query = "UPDATE ".db_table_name('failed_login_attempts')
+                ." SET number_attempts=number_attempts+1, last_attempt = '$timestamp' WHERE ip='$sIp'";
+            else
+                $query = "INSERT INTO ".db_table_name('failed_login_attempts') . "(ip, number_attempts,last_attempt)"
+                ." VALUES('$sIp',1,'$timestamp')";
+            
+            return $query;
+        }
+        
+        
+        function getUserNameFromUid($uid){
+            $query = "SELECT users_name, uid FROM ".db_table_name('users')." WHERE uid = $uid;";
+            
+            $result = db_execute_assoc($query) or safe_die($connect->ErrorMsg());
+            
+            
+            if($result->RecordCount() > 0) {
+                while($rows = $result->FetchRow()){
+                    return $rows['users_name'];
+                }
+            }
+        }
+    }    
+    
 
 if (!isset($_SESSION['loginID']))
 {
@@ -92,7 +134,7 @@ if (!isset($_SESSION['loginID']))
             }
         }
     }
-    elseif($action == "login" && $useWebserverAuth === false)	// normal login
+    elseif($action == "login" && $useWebserverAuth === false) // normal login
     {
         $loginsummary = '';
 
@@ -156,7 +198,7 @@ if (!isset($_SESSION['loginID']))
                         if (strtolower($_POST['password'])=='password')
                         {
                             $_SESSION['pw_notify']=true;
-						    $_SESSION['flashmessage']=$clang->gT("Warning: You are still using the default password ('password'). Please change your password and re-login again.");
+                $_SESSION['flashmessage']=$clang->gT("Warning: You are still using the default password ('password'). Please change your password and re-login again.");
                         }
                         else
                         {
@@ -224,10 +266,10 @@ if (!isset($_SESSION['loginID']))
                         if (isset($_POST['refererargs']) && $_POST['refererargs'] &&
                         strpos($_POST['refererargs'], "action=logout") === FALSE)
                         {
-                        	require_once("../classes/inputfilter/class.inputfilter_clean.php");
-                        	$myFilter = new InputFilter('','',1,1,1);
-                        	// Prevent XSS attacks
-                        	$sRefererArg=$myFilter->process($_POST['refererargs']);
+                          require_once("../classes/inputfilter/class.inputfilter_clean.php");
+                          $myFilter = new InputFilter('','',1,1,1);
+                          // Prevent XSS attacks
+                          $sRefererArg=$myFilter->process($_POST['refererargs']);
                             $_SESSION['metaHeader']="<meta http-equiv=\"refresh\""
                             . " content=\"1;URL={$scriptname}?".$sRefererArg."\" />";
                             $loginsummary .= "<p><font size='1'><i>".$clang->gT("Reloading screen. Please wait.")."</i></font>\n";
@@ -259,12 +301,12 @@ if (!isset($_SESSION['loginID']))
             }
         }
     }
-    elseif($useWebserverAuth === true && !isset($_SERVER['PHP_AUTH_USER']))	// LimeSurvey expects webserver auth  but it has not been achieved
+    elseif($useWebserverAuth === true && !isset($_SERVER['PHP_AUTH_USER'])) // LimeSurvey expects webserver auth  but it has not been achieved
     {
         $loginsummary .= "<br />".$clang->gT("LimeSurvey is setup to use the webserver authentication, but it seems you have not already been authenticated")."<br />";
         $loginsummary .= "<br /><br />".$clang->gT("Please contact your system administrator")."<br />&nbsp;\n";
     }
-    elseif($useWebserverAuth === true && isset($_SERVER['PHP_AUTH_USER']))	// normal login through webserver authentication
+    elseif($useWebserverAuth === true && isset($_SERVER['PHP_AUTH_USER']))  // normal login through webserver authentication
     {
         $action = 'login';
         // we'll include database.php
@@ -443,15 +485,15 @@ elseif ($action == "adduser" && $_SESSION['USER_RIGHT_CREATE_USER'])
             $connect->Execute($template_query); //Checked
 
             // add new user to userlist
-            $squery = "SELECT uid, users_name, password, parent_id, email, create_survey, configurator, create_user, delete_user, superadmin, manage_template, manage_label FROM ".db_table_name('users')." WHERE uid='{$newqid}'";			//added by Dennis
+            $squery = "SELECT uid, users_name, password, parent_id, email, create_survey, configurator, create_user, delete_user, superadmin, manage_template, manage_label FROM ".db_table_name('users')." WHERE uid='{$newqid}'";     //added by Dennis
             $sresult = db_execute_assoc($squery);//Checked
             $srow = $sresult->FetchRow();
             $userlist = getuserlist();
             array_push($userlist, array("user"=>$srow['users_name'], "uid"=>$srow['uid'], "email"=>$srow['email'],
-			"password"=>$srow["password"], "parent_id"=>$srow['parent_id'], // "level"=>$level,
-			"create_survey"=>$srow['create_survey'], "configurator"=>$srow['configurator'], "create_user"=>$srow['create_user'],
-			"delete_user"=>$srow['delete_user'], "superadmin"=>$srow['superadmin'], "manage_template"=>$srow['manage_template'],
-			"manage_label"=>$srow['manage_label']));
+      "password"=>$srow["password"], "parent_id"=>$srow['parent_id'], // "level"=>$level,
+      "create_survey"=>$srow['create_survey'], "configurator"=>$srow['configurator'], "create_user"=>$srow['create_user'],
+      "delete_user"=>$srow['delete_user'], "superadmin"=>$srow['superadmin'], "manage_template"=>$srow['manage_template'],
+      "manage_label"=>$srow['manage_label']));
 
             // send Mail
             $body = sprintf($clang->gT("Hello %s,"), $new_full_name)."<br /><br />\n";
@@ -515,7 +557,7 @@ elseif (($action == "deluser" || $action == "finaldeluser") && ($_SESSION['USER_
     $adminresult = db_select_limit_assoc($adminquery, 1);//Checked
     $row=$adminresult->FetchRow();
 
-    if($row['uid'] == $postuserid)	// it's the original superadmin !!!
+    if($row['uid'] == $postuserid)  // it's the original superadmin !!!
     {
         $addsummary .= "<div class=\"warningheader\">".$clang->gT("Initial Superadmin cannot be deleted!")."</div>\n";
     }
@@ -571,19 +613,19 @@ elseif (($action == "deluser" || $action == "finaldeluser") && ($_SESSION['USER_
 
                     if (isset($fields[0]))
                     {
-                        $uquery = "UPDATE ".db_table_name('users')." SET parent_id={$fields[0]} WHERE parent_id=".$postuserid;	//		added by Dennis
+                        $uquery = "UPDATE ".db_table_name('users')." SET parent_id={$fields[0]} WHERE parent_id=".$postuserid;  //    added by Dennis
                         $uresult = $connect->Execute($uquery); //Checked
                     }
 
                     //DELETE USER FROM TABLE
-                    $dquery="DELETE FROM {$dbprefix}users WHERE uid=".$postuserid;	//	added by Dennis
+                    $dquery="DELETE FROM {$dbprefix}users WHERE uid=".$postuserid;  //  added by Dennis
                     $dresult=$connect->Execute($dquery);  //Checked
 
                     // Delete user rights
                     $dquery="DELETE FROM {$dbprefix}survey_permissions WHERE uid=".$postuserid;
                     $dresult=$connect->Execute($dquery); //Checked
 
-                    if($postuserid == $_SESSION['loginID']) killSession();	// user deleted himself
+                    if($postuserid == $_SESSION['loginID']) killSession();  // user deleted himself
 
                     $addsummary .= "<br />".$clang->gT("Username").": {$postuser}<br /><br />\n";
                     $addsummary .= "<div class=\"successheader\">".$clang->gT("Success!")."</div>\n";
@@ -735,14 +777,14 @@ elseif ($action == "userrights")
             $rights = array();
 
             // Forbids Allowing more privileges than I have
-            if(isset($_POST['create_survey']) && $_SESSION['USER_RIGHT_CREATE_SURVEY'])$rights['create_survey']=1;		else $rights['create_survey']=0;
-            if(isset($_POST['configurator']) && $_SESSION['USER_RIGHT_CONFIGURATOR'])$rights['configurator']=1;			else $rights['configurator']=0;
-            if(isset($_POST['create_user']) && $_SESSION['USER_RIGHT_CREATE_USER'])$rights['create_user']=1;			else $rights['create_user']=0;
-            if(isset($_POST['delete_user']) && $_SESSION['USER_RIGHT_DELETE_USER'])$rights['delete_user']=1;			else $rights['delete_user']=0;
+            if(isset($_POST['create_survey']) && $_SESSION['USER_RIGHT_CREATE_SURVEY'])$rights['create_survey']=1;    else $rights['create_survey']=0;
+            if(isset($_POST['configurator']) && $_SESSION['USER_RIGHT_CONFIGURATOR'])$rights['configurator']=1;     else $rights['configurator']=0;
+            if(isset($_POST['create_user']) && $_SESSION['USER_RIGHT_CREATE_USER'])$rights['create_user']=1;      else $rights['create_user']=0;
+            if(isset($_POST['delete_user']) && $_SESSION['USER_RIGHT_DELETE_USER'])$rights['delete_user']=1;      else $rights['delete_user']=0;
 
             $rights['superadmin']=0; // ONLY Initial Superadmin can give this right
-            if(isset($_POST['manage_template']) && $_SESSION['USER_RIGHT_MANAGE_TEMPLATE'])$rights['manage_template']=1;	else $rights['manage_template']=0;
-            if(isset($_POST['manage_label']) && $_SESSION['USER_RIGHT_MANAGE_LABEL'])$rights['manage_label']=1;			else $rights['manage_label']=0;
+            if(isset($_POST['manage_template']) && $_SESSION['USER_RIGHT_MANAGE_TEMPLATE'])$rights['manage_template']=1;  else $rights['manage_template']=0;
+            if(isset($_POST['manage_label']) && $_SESSION['USER_RIGHT_MANAGE_LABEL'])$rights['manage_label']=1;     else $rights['manage_label']=0;
 
             if ($postuserid<>1) setuserrights($postuserid, $rights);
             $addsummary .= "<div class=\"successheader\">".$clang->gT("User permissions were updated successfully.")."</div>\n";
@@ -752,10 +794,10 @@ elseif ($action == "userrights")
         {
             $rights = array();
 
-            if(isset($_POST['create_survey']))$rights['create_survey']=1;		else $rights['create_survey']=0;
-            if(isset($_POST['configurator']))$rights['configurator']=1;			else $rights['configurator']=0;
-            if(isset($_POST['create_user']))$rights['create_user']=1;			else $rights['create_user']=0;
-            if(isset($_POST['delete_user']))$rights['delete_user']=1;			else $rights['delete_user']=0;
+            if(isset($_POST['create_survey']))$rights['create_survey']=1;   else $rights['create_survey']=0;
+            if(isset($_POST['configurator']))$rights['configurator']=1;     else $rights['configurator']=0;
+            if(isset($_POST['create_user']))$rights['create_user']=1;     else $rights['create_user']=0;
+            if(isset($_POST['delete_user']))$rights['delete_user']=1;     else $rights['delete_user']=0;
 
             // Only Initial Superadmin can give this right
             if(isset($_POST['superadmin']))
@@ -767,7 +809,7 @@ elseif ($action == "userrights")
                 $adminresult = db_select_limit_assoc($adminquery, 1);
                 $row=$adminresult->FetchRow();
 
-                if($row['uid'] == $_SESSION['loginID'])	// it's the original superadmin !!!
+                if($row['uid'] == $_SESSION['loginID']) // it's the original superadmin !!!
                 {
                     $rights['superadmin']=1;
                 }
@@ -781,8 +823,8 @@ elseif ($action == "userrights")
                 $rights['superadmin']=0;
             }
 
-            if(isset($_POST['manage_template']))$rights['manage_template']=1;	else $rights['manage_template']=0;
-            if(isset($_POST['manage_label']))$rights['manage_label']=1;			else $rights['manage_label']=0;
+            if(isset($_POST['manage_template']))$rights['manage_template']=1; else $rights['manage_template']=0;
+            if(isset($_POST['manage_label']))$rights['manage_label']=1;     else $rights['manage_label']=0;
 
             setuserrights($postuserid, $rights);
             $addsummary .= "<div class=\"successheader\">".$clang->gT("User permissions were updated successfully.")."</div>\n";
@@ -844,44 +886,4 @@ elseif ($action == "usertemplates")
         include("access_denied.php");
     }
     $addsummary .= "</div>\n";
-}
-
-// very ugly fix around very ugly implementation and include-control of LimeSurvey:
-if (!function_exists('getInitialAdmin_uid')) {
-function getInitialAdmin_uid()
-{
-    global $dbprefix;
-    // Initial SuperAdmin has parent_id == 0
-    $adminquery = "SELECT uid FROM {$dbprefix}users WHERE parent_id=0";
-    $adminresult = db_select_limit_assoc($adminquery, 1);
-    $row=$adminresult->FetchRow();
-    return $row['uid'];
-}
-
-function fGetLoginAttemptUpdateQry($la,$sIp)
-{
-    $timestamp = date("Y-m-d H:i:s");
-    if ($la)
-        $query = "UPDATE ".db_table_name('failed_login_attempts')
-                 ." SET number_attempts=number_attempts+1, last_attempt = '$timestamp' WHERE ip='$sIp'";
-    else
-        $query = "INSERT INTO ".db_table_name('failed_login_attempts') . "(ip, number_attempts,last_attempt)"
-                 ." VALUES('$sIp',1,'$timestamp')";
-
-    return $query;
-}
-
-
-function getUserNameFromUid($uid){
-    $query = "SELECT users_name, uid FROM ".db_table_name('users')." WHERE uid = $uid;";
-
-    $result = db_execute_assoc($query) or safe_die($connect->ErrorMsg());
-
-
-    if($result->RecordCount() > 0) {
-        while($rows = $result->FetchRow()){
-            return $rows['users_name'];
-        }
-    }
-}
 }
