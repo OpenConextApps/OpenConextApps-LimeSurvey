@@ -24,9 +24,14 @@ class Message {
 	}
 
 	public function __toString() {
+		if (count($this->_recipients) > 0) {
+			$r = $this->_recipients[0]; 
+		} else {
+			$r = "[[undefined]]";
+		}
 		return <<<HERE
 From: {$this->_sender}
-To: {$this->_recipients[0]}
+To: {$r}
 Subject: {$this->_subject}
 {$this->_content}		
 HERE
