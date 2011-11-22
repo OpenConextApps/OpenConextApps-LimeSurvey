@@ -101,11 +101,14 @@ $WebserverAuth_autocreateUser = true;
 // Handle SAML authentication stuff using simplesamlphp
 
 // Include simpleSAMLcodebase
-// define('SIMPLESAML_PATH', '/var/www/simplesaml');
-define('SIMPLESAML_PATH', '/Users/dopey/Projects/SURFnet/LimeSurvey/Workspace/simplesaml');
+define('SIMPLESAML_PATH', '/var/www/simplesaml');
+// define('SIMPLESAML_PATH', '/Users/dopey/Projects/SURFnet/LimeSurvey/Workspace/simplesaml');
 require_once(SIMPLESAML_PATH . '/lib/_autoload.php');
 
-if ($samlEnabled) {
+$a = $_SERVER['REQUEST_URI'];
+$inadmin = ( strstr($a, "/admin") !== FALSE ? true : false);
+
+if ($inadmin && $samlEnabled) {
     // Use the default sp setting as defined in simplesamlphp
     $as = new SimpleSAML_Auth_Simple('default-sp');
 
