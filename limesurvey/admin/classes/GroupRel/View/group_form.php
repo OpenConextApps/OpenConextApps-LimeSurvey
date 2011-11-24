@@ -30,6 +30,8 @@ global $clang, $baseurl;
 <!--
   div.coinGroupSelector {
     font-family: sans-serif;
+    margin-left:auto;
+    margin-right:auto;
     
     width: 400px;
     background: #F1F2F3;
