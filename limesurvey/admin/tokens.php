@@ -3186,8 +3186,13 @@ if ($subaction == "uploados" && bHasSurveyPermission($surveyid, 'tokens','import
 	global $surveyid, $tokenoutput;
     require_once('classes/GroupTokens.php');
 
-    global $grouprel_config;
-    $auth = array($grouprel_config['userIdAttribute'] => 'urn:collab:person:test.surfguest.nl:mdobrinic');
+    global $grouprel_config, $as, $user_id;
+    if (isset($as)) {
+		$auth = array($grouprel_config['userIdAttribute'] => $user_id);
+	} else {
+		// developer:
+	    $auth = array($grouprel_config['userIdAttribute'] => 'urn:collab:person:test.surfguest.nl:mdobrinic');
+	}
     
     $o = new GroupTokens($auth, $surveyid, $grouprel_config);
 	
