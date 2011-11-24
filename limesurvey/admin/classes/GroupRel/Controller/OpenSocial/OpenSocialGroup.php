@@ -22,8 +22,12 @@ class OpenSocialGroup extends Group {
     public static function createOS($osapi) {
 		$oGroup = new OpenSocialGroup($osapi['id']['groupId']);
         
-		$oGroup->_aAttributes["title"] = $osapi['title'];
-		$oGroup->_aAttributes["description"] = $osapi['description'];
+        if (array_key_exists('title', $osapi)) {
+            $oGroup->_aAttributes["title"] = $osapi['title'];
+        }
+        if (array_key_exists('description', $osapi)) {
+            $oGroup->_aAttributes["description"] = $osapi['description'];
+        }
 		
 		return $oGroup;
     }
