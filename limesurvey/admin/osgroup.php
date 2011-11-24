@@ -32,6 +32,7 @@ if ($subaction == 'form') {
 			"form" => array(
 				"action" => "$rooturl/admin/admin.php?action=tokens&sid=$surveyid&subaction=uploados",
 				"method" => "POST",
+                "selected" => array(),  // always show clean for without pre-selection
 			),
 			"hiddenfields" => array("share"=>"invite", "checksessionbypost" => $_SESSION['checksessionpost']),
 			"showsubmit" => true,
