@@ -20,16 +20,16 @@
 			'class' => 'OpenSocial_GroupRelationsImpl',
 			
 			/* configuration for the worker class; see documentation below */
-			'consumerkey' => '',
-			'consumersecret' => ''
+			'consumerkey' => '-insert-key-here-',
+			'consumersecret' => '-insert-secret-here-',
 			'provider' => array(
 				'providerName' => 'conext',
 				'class' => 'osapiGroupRelProvider',
-				'requestTokenUrl' => 'https://os.dev.surfconext.nl/oauth/requestToken',
-				'authorizeUrl' => 'https://os.dev.surfconext.nl/oauth/authorize',
-				'accessTokenUrl' => 'https://os.dev.surfconext.nl/oauth/accessToken', 
-				'restEndpoint' => 'https://os.dev.surfconext.nl/social/rest',
-				'rpcEndpoint' => 'https://os.dev.surfconext.nl/social/rpc',
+				'requestTokenUrl' => 'https://api.surfconext.nl/v1/oauth1/requestToken',
+				'authorizeUrl' => 'https://api.surfconext.nl/v1/oauth1/confirm_access',
+				'accessTokenUrl' => 'https://api.surfconext.nl/v1/oauth1/accessToken', 
+				'restEndpoint' => 'https://api.surfconext.nl/v1/social/rest',
+				'rpcEndpoint' => '',
 				),
 			'strictMode' => FALSE,
     	),

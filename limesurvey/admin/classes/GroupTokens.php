@@ -249,7 +249,7 @@ SHOW
 
             $this->_allmembers = array();
             
-			self::$fetcher->process(array('userId' => $userId, 'message' => new Message()), 
+			self::$fetcher->process(array('userId' => $userId, 'message' => new grouprelMessage()), 
 				array($this, "appendMember"),			
 				$aSelectedGroups, null);
             
@@ -277,7 +277,7 @@ SHOW
      * "email" : email address of the person
      * $message contains the message instance that was passed when process() was called
      */
-	public function appendMember(Message $message, &$person, $groupname) {
+	public function appendMember(grouprelMessage $message, &$person, $groupname) {
         $this->_allmembers[] = $person;
         // no more to do.
 	}

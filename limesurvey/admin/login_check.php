@@ -139,7 +139,7 @@ if( isset($_POST['user']) && isset($_POST['password']) ||
 ($action == "logout") ||
 ($useWebserverAuth === true && !isset($_SESSION['loginID'])) )
 {
-    include("usercontrol.php");
+    include_once("usercontrol.php");
 }
 
 

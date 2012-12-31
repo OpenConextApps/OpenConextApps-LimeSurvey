@@ -39,7 +39,10 @@ $samlEnabled = true;
 // defined in LimeSurvey
 // Can be usefull if you have no way to add an 'admin' user to the database
 // used by the webserver, then you could map your true loginame to admin with
-$userArrayMap = Array ('urn:collab:person:test.surfguest.nl:mdobrinic' => 'admin');
+//$userArrayMap = Array ('urn:collab:person:test.surfguest.nl:mdobrinic' => 'admin');
+$userArrayMap = Array ('9561aceb38b978495b8cf325ef4ab11b4207c105' => 'admin');
+
+// $userArrayMap = Array ('9956712f5d9d4441ca9f96078139c6dae4431ad1' => 'admin');
 //
 // $WebserverAuth_autocreateUser
 // Enable this if you want to automatically create users authenticated by the 
@@ -101,9 +104,10 @@ $WebserverAuth_autocreateUser = true;
 // Handle SAML authentication stuff using simplesamlphp
 
 // Include simpleSAMLcodebase
-define('SIMPLESAML_PATH', '/var/www/simplesaml');
-// define('SIMPLESAML_PATH', '/Users/dopey/Projects/SURFnet/LimeSurvey/Workspace/simplesaml');
+// define('SIMPLESAML_PATH', '/var/www/simplesaml');
+define('SIMPLESAML_PATH', '/var/www/simplesamlphp-1.10.0');
 require_once(SIMPLESAML_PATH . '/lib/_autoload.php');
+
 
 $a = $_SERVER['REQUEST_URI'];
 $inadmin = ( strstr($a, "/admin") !== FALSE ? true : false);
